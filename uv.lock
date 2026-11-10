@@ -868,17 +868,13 @@ wheels = [
 
 [[package]]
 name = "infoweight"
-version = "0.0.3"
-source = { registry = "https://pypi.org/simple" }
+version = "0.0.4.dev0"
+source = { git = "https://github.com/ryandewolfe33/infoweight.git#6cd256e7603ee4426af8dd7388e6fd5a13cc76b7" }
 dependencies = [
     { name = "numba" },
     { name = "numpy" },
     { name = "scikit-learn" },
     { name = "scipy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0b/11/527abbc34f1065d35afffe331e3608dd1a2a7a448c2b485a487bb7b8d749/infoweight-0.0.3.tar.gz", hash = "sha256:9d8e6c5a0227c8153f862d05e6262b563b2accd50d700a6147842df4d8b80048", size = 7758, upload-time = "2026-09-30T00:49:34.91Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/6c/ab9d761a7d2e2b7ea8139e8d50e8512e994f015efa92253f47ddf47b8ef3/infoweight-0.0.3-py3-none-any.whl", hash = "sha256:a727389ee5e9739d60b06c9f7c80f8e376ea045247ca3b162df5ed26b2717f9f", size = 8219, upload-time = "2026-09-30T00:49:33.857Z" },
 ]
 
 [[package]]
@@ -2370,6 +2366,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-dotenv"
+version = "1.2.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/26/2fbeedb218a787a5eea551c7532cac4e009f83d689dd2faa0d0353473f86/python_dotenv-1.2.4.tar.gz", hash = "sha256:f0d53e69935a851c0dcc78f3ab7aaccd8cabef0b92382b576b824212902873c0", size = 60824, upload-time = "2026-10-01T05:36:10Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/d1/38f3a3405989a89ac18390803e70c6ad7c7760da4f9b83cbeca0c44a0c72/python_dotenv-1.2.4-py3-none-any.whl", hash = "sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc", size = 23266, upload-time = "2026-10-01T05:36:08.633Z" },
+]
+
+[[package]]
 name = "python-json-logger"
 version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3231,7 +3236,7 @@ wheels = [
 [[package]]
 name = "vectorizers"
 version = "0.2.3"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/TutteInstitute/vectorizers.git#f6db6e448667af822a01e0ee49ef2ee2092b92f0" }
 dependencies = [
     { name = "dask" },
     { name = "numba" },
@@ -3240,10 +3245,6 @@ dependencies = [
     { name = "pynndescent" },
     { name = "scikit-learn" },
     { name = "scipy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/dd/be8ff9bed16d2f47b5003c774d6a0e198d16bbb20cdad9097b47101b835c/vectorizers-0.2.3.tar.gz", hash = "sha256:7462421bb108badc28f81b6f9696f3b4bdbf37f48cf1beae476c9db4bb2ca990", size = 106696, upload-time = "2026-10-24T17:28:34.546Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bc/22/5ef88d6a7f6666a6c4006e4e22b757d3d4efa6d41473d8e41f6db83dc808/vectorizers-0.2.3-py3-none-any.whl", hash = "sha256:81b5488c9e04280cd9c6987a5f126cefcbba2af62a0afbda9f16dc23f8668d56", size = 126702, upload-time = "2026-10-24T17:28:33.019Z" },
 ]
 
 [[package]]
@@ -3507,6 +3508,7 @@ dependencies = [
     { name = "ipywidgets" },
     { name = "jupyter" },
     { name = "mteb", extra = ["xet"] },
+    { name = "python-dotenv" },
     { name = "scikit-learn" },
     { name = "sentencepiece" },
     { name = "vectorizers" },
@@ -3515,12 +3517,13 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "datasets", specifier = ">=5.1.0" },
-    { name = "infoweight", specifier = ">=0.0.3" },
+    { name = "infoweight", git = "https://github.com/ryandewolfe33/infoweight.git" },
     { name = "ipykernel", specifier = ">=7.4.0" },
     { name = "ipywidgets", specifier = ">=8.1.9" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "mteb", extras = ["xet"], specifier = ">=2.26.30" },
+    { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "scikit-learn", specifier = ">=1.9.1" },
     { name = "sentencepiece", specifier = ">=0.2.3" },
-    { name = "vectorizers", specifier = ">=0.2.3" },
+    { name = "vectorizers", git = "https://github.com/TutteInstitute/vectorizers.git" },
 ]

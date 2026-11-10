@@ -1,3 +1,6 @@
 .venv
+.env
 .DS_Store
 __pycache__
+
+wikitext-103-v1

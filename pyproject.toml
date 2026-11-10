@@ -16,6 +16,7 @@ dependencies = [
     "ipywidgets>=8.1.9",
     "jupyter>=1.1.1",
     "mteb[xet]>=2.26.30",
+    "python-dotenv>=1.2.4",
     "scikit-learn>=1.9.1",
     "sentencepiece>=0.2.3",
     "vectorizers>=0.2.3",
@@ -23,3 +24,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/ryandewolfe33/zero-parameter/embedder"
+
+[tool.uv.sources]
+vectorizers = { git = "https://github.com/TutteInstitute/vectorizers.git" }
+infoweight = { git = "https://github.com/ryandewolfe33/infoweight.git" }
