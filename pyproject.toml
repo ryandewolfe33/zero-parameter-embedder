@@ -1,0 +1,25 @@
+[project]
+name = "zero-parameter-embedder"
+version = "0.0.1"
+requires-python = ">=3.14"
+authors = [
+  {name = "Ryan DeWolfe", email = "ryan.dewolfe@uwaterloo.ca"},
+]
+description = "Define and test a zero parameter embedding model."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICEN[CS]E.*"]
+dependencies = [
+    "datasets>=5.1.0",
+    "infoweight>=0.0.3",
+    "ipykernel>=7.4.0",
+    "ipywidgets>=8.1.9",
+    "jupyter>=1.1.1",
+    "mteb[xet]>=2.26.30",
+    "scikit-learn>=1.9.1",
+    "sentencepiece>=0.2.3",
+    "vectorizers>=0.2.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/ryandewolfe33/zero-parameter/embedder"
