@@ -1,4 +1,5 @@
 import mteb
+import numpy as np
 from mteb.abstasks.task_metadata import TaskMetadata
 from mteb.types import PromptType, Array, BatchedInput
 from torch.utils.data import DataLoader
@@ -56,14 +57,17 @@ class ZeroParameterEmbedder(AbsEncoder):
         Returns:
             The encoded sentences.
         """
-        all_text = [text for batch in inputs for text in batch["text"]]
+        embedding = []
 
-        token_sequences = self.tokenizer.encode(all_text, out_type=str)
-        
-        token_counts = self.ngram_vectorizer.fit_transform(token_sequences)
-        if self.infoweight_transformer is not None:
-            token_counts = self.infoweight_transformer.transform(token_counts)
-            
-        document_vectors = self.wasserstein_vectorizer.transform(token_counts, vectors=self.token_vectors)
+        for batch in inputs:
+            text = [text for text in batch["text"]]
+            token_sequences = self.tokenizer.encode(text, out_type=str)
+            token_counts = self.ngram_vectorizer.fit_transform(token_sequences)
+            if self.infoweight_transformer is not None:
+                token_counts = self.infoweight_transformer.transform(token_counts)   
+            vectors = self.wasserstein_vectorizer.transform(token_counts, vectors=self.token_vectors)
+            embedding.append(vectors.astype("float32"))
 
-        return document_vectors.astype("float32")
+        embedding = np.vstack(embedding)
+
+        return embedding

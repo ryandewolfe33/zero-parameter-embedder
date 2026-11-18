@@ -4,10 +4,13 @@ import mteb
 import bz2
 import os
 import pickle
+import logging
 
 from embedder import ZeroParameterEmbedder
 
+
 # Define folder to save benchmark results in
+logging.basicConfig(level=logging.INFO)
 custom_cache = mteb.cache.ResultCache(cache_path="mteb_results")
 
 
