@@ -1,7 +1,7 @@
 [project]
 name = "zero-parameter-embedder"
 version = "0.0.1"
-requires-python = ">=3.14"
+requires-python = "~=3.12.0"
 authors = [
   {name = "Ryan DeWolfe", email = "ryan.dewolfe@uwaterloo.ca"},
 ]
@@ -11,11 +11,11 @@ license = "MIT"
 license-files = ["LICEN[CS]E.*"]
 dependencies = [
     "datasets>=5.1.0",
+    "gensim>=4.4.0",
     "infoweight>=0.0.3",
     "ipykernel>=7.4.0",
     "ipywidgets>=8.1.9",
     "jupyter>=1.1.1",
-    "memray>=1.20.0",
     "mteb[xet]>=2.26.30",
     "python-dotenv>=1.2.4",
     "scikit-learn>=1.9.1",

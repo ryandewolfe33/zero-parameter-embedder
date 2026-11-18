@@ -4,3 +4,7 @@
 __pycache__
 
 wikitext-103-v1
+
+*.pkl
+*.pkl.bz2
+mteb_results/*
