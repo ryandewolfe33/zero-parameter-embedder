@@ -13,6 +13,7 @@ from embedder import ZeroParameterEmbedder
 logging.basicConfig(level=logging.INFO)
 custom_cache = mteb.cache.ResultCache(cache_path="mteb_results")
 
+
 exclude_tasks = ["MindSmallReranking"]
 
 if __name__ == "__main__":
@@ -23,7 +24,11 @@ if __name__ == "__main__":
     # Pick Benchmark tasks
     benchmark = mteb.get_benchmark("MTEB(eng, v2)")
     tasks = [t for t in benchmark.tasks if t.metadata.name not in exclude_tasks]
+
     print(f"Found {len(tasks)} tasks")
+    for t in tasks:
+        print(t.metadata.name, t.metadata.descriptive_stats["test"]["num_samples"])
+    print()
 
     tokenizer_path = "tokenizer.pkl.bz2"
     token_dictionary_path = "token_dictionary.pkl.bz2"
@@ -59,7 +64,7 @@ if __name__ == "__main__":
         if len(missing_tasks) == 0:
             print("All tasks cached for", detials[0])
             continue
-        
+
         print(len(missing_tasks), "tasks left to run for", details[0])
 
         with bz2.open(details[1], "rb") as f:
@@ -100,8 +105,8 @@ if __name__ == "__main__":
         )
 
         results = mteb.evaluate(
-            model, 
+            model,
             tasks=tasks,
             cache=custom_cache,
             encode_kwargs = {'batch_size': 8192},
-        )
+	)
