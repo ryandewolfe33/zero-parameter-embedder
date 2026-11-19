@@ -10,7 +10,7 @@ from embedder import ZeroParameterEmbedder
 
 
 # Define folder to save benchmark results in
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 custom_cache = mteb.cache.ResultCache(cache_path="mteb_results")
 
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         }
         missing_tasks = [t for t in tasks if t.metadata.name not in cached_task_names]
         if len(missing_tasks) == 0:
-            print("All tasks cached for", detials[0])
+            print("All tasks cached for", details[0])
             continue
 
         print(len(missing_tasks), "tasks left to run for", details[0])
@@ -81,9 +81,9 @@ if __name__ == "__main__":
         with bz2.open(details[5], "rb") as f:
             wasserstein = pickle.load(f)
 
-        model = ZeroParameterEmbedder("ZPE", "0.0.1", tokenizer, token_dictionary, token_vectors, infoweight, wasserstein),
-        # Create model
-        model.metadata = ModelMeta(
+	# Create model
+        model = ZeroParameterEmbedder("ZPE", "0.0.1", tokenizer, token_dictionary, token_vectors, infoweight, wasserstein)
+        model.mteb_model_meta = ModelMeta(
             name=details[0],
             revision="0.0.1",
             languages=["eng-Latn"],
