@@ -1,17 +1,18 @@
 import os
 
-os.environ["OMP_NUM_THREADS"] = "16"
-os.environ["OPENBLAS_NUM_THREADS"] = "16"
-os.environ["MKL_NUM_THREADS"] = "16"
-os.environ["NUMBA_NUM_THREADS"] = "16"
+os.environ["OMP_NUM_THREADS"] = "8"
+os.environ["OPENBLAS_NUM_THREADS"] = "8"
+os.environ["MKL_NUM_THREADS"] = "8"
+os.environ["NUMBA_NUM_THREADS"] = "8"
 skipgram_workers = 8
 
 
 from datasets import load_from_disk, load_dataset
 from dotenv import load_dotenv
 from infoweight import InformationWeightTransformer
-from sklearn.decomposition import TruncatedSVD
+from scipy.sparse.linalg import svds
 from sklearn.preprocessing import normalize
+from sklearn.utils.extmath import svd_flip
 from vectorizers import TokenCooccurrenceVectorizer, NgramVectorizer, WassersteinVectorizer
 import gensim
 import numpy as np
@@ -19,11 +20,12 @@ import sentencepiece
 
 
 from pathlib import Path
-import bz2
 import gc
 import io
 import pickle
 import time
+
+DIMENSION = 64
 
 
 def format_timing(elapsed):
@@ -45,32 +47,34 @@ def format_timing(elapsed):
 
 def dist_dr(skipgrams):
     # Row normalize token vectors into distributions and decrease precision
-    skipgram_distributions = normalize(skipgrams, norm="l1", axis=1).astype("float32")
-    svd = TruncatedSVD(n_components=128, random_state=42)
-    token_vectors_skipgram = svd.fit_transform(skipgram_distributions.sqrt())
-    # SQRT makes euclidean equal to Hellinger
-    return token_vectors_skipgram
+    # SQRT makes euclidean proportional to Hellinger
+    skipgram_distributions = normalize(skipgrams, norm="l1", axis=1).sqrt().astype("float32")
+    u, s, v = svds(skipgram_distributions, k=DIMENSION, random_state=42)
+    u, v = svd_flip(u, v)
+    token_vectors = u * np.power(s, 0.5)
+    return token_vectors
 
 
 def fit_wasserstein(token_counts, token_vectors, path):
     start = time.perf_counter()
     wasserstein = WassersteinVectorizer(method="LOT_sinkhorn",
+                                        n_components=DIMENSION,
                                         random_state=42)
     wasserstein.fit(token_counts, vectors=token_vectors)
     end = time.perf_counter()
     print(f"Finished in {format_timing(end - start)}\n")
-    with bz2.open(path, "wb") as f:
+    with open(path, "wb") as f:
         pickle.dump(wasserstein, f)
 
 if __name__ == "__main__":
 
     print("Tokenizer Part")
     data_path = "wikitext-103-v1"
-    tokenizer_path = Path("tokenizer.pkl.bz2")
-    token_sequences_path = Path("token_sequences.pkl.bz2")
-    token_dict_path = Path("token_dictionary.pkl.bz2")
-    token_counts_path = Path("token_counts.pkl.bz2")
-    infoweight_transformer_path = Path("infoweight_transformer.pkl.bz2")
+    tokenizer_path = Path("tokenizer.pkl")
+    token_sequences_path = Path("token_sequences.pkl")
+    token_dict_path = Path("token_dictionary.pkl")
+    token_counts_path = Path("token_counts.pkl")
+    infoweight_transformer_path = Path("infoweight_transformer.pkl")
 
     if (
         Path(data_path).is_dir()
@@ -116,16 +120,16 @@ if __name__ == "__main__":
             tokenizer = sentencepiece.SentencePieceProcessor(model_proto=model_buffer.getvalue())
             end = time.perf_counter()
             print(f"Finished in {format_timing(end - start)}\n")
-            with bz2.open(tokenizer_path, "wb") as f:
+            with open(tokenizer_path, "wb") as f:
                 pickle.dump(tokenizer, f)
 
             token_sequences = tokenizer.encode(pruned_text_list, out_type=str)
-            with bz2.open(token_sequences_path, "wb") as f:
+            with open(token_sequences_path, "wb") as f:
                 pickle.dump(token_sequences, f)
 
             unique_tokens = list(set.union(*[set(s) for s in token_sequences]))
             token_dictionary = {t:i for i,t in enumerate(unique_tokens)}
-            with bz2.open(token_dict_path, "wb") as f:
+            with open(token_dict_path, "wb") as f:
                 pickle.dump(token_dictionary, f)
             print(f"{len(token_dictionary)} unique tokens in training corpus\n")
 
@@ -135,7 +139,7 @@ if __name__ == "__main__":
             token_counts = counter.fit_transform(token_sequences)
             end = time.perf_counter()
             print(f"Finished in {format_timing(end - start)}\n")
-            with bz2.open(token_counts_path, "wb") as f:
+            with open(token_counts_path, "wb") as f:
                 pickle.dump(token_counts, f)
             print(f"Token counts: {token_counts.shape} with {token_counts.nnz} entries")
 
@@ -145,7 +149,7 @@ if __name__ == "__main__":
             infoweight_transformer.fit(token_counts)
             end = time.perf_counter()
             print(f"Finished in {format_timing(end - start)}\n")
-            with bz2.open(infoweight_transformer_path, "wb") as f:
+            with open(infoweight_transformer_path, "wb") as f:
                 pickle.dump(infoweight_transformer , f)
 
         # Saves files but does not return anything
@@ -159,22 +163,27 @@ if __name__ == "__main__":
 
     # Token vectorization
     print("Token Vectorization")
-    token_vectors_skipgram_raw_path = Path("token_vectors_skipgram_raw.pkl.bz2")
-    token_vectors_skipgram_iwt_path = Path("token_vectors_skipgram_iwt.pkl.bz2")
-    token_vectors_skipgram_path = Path("token_vectors_skipgram.pkl.bz2")
+    token_vectors_skipgram_raw_path = Path("token_vectors_skipgram_raw.pkl")
+    token_vectors_skipgram_iwt_path = Path("token_vectors_skipgram_iwt.pkl")
+    token_vectors_skipgram_path = Path("token_vectors_skipgram.pkl")
 
     if token_vectors_skipgram_raw_path.is_file() and token_vectors_skipgram_iwt_path.is_file() and token_vectors_skipgram_path.is_file():
         print("Token vectorization already cached.")
     else:
-        with bz2.open(token_sequences_path, "rb") as f:
+        with open(token_sequences_path, "rb") as f:
             token_sequences = pickle.load(f)
-        with bz2.open(token_dict_path, "rb") as f:
+        with open(token_dict_path, "rb") as f:
             token_dictionary = pickle.load(f)
 
         def token_vectorization(token_sequences, token_dictionary, token_vectors_skipgram_raw_path, token_vectors_skipgram_iwt_path, token_vectors_skipgram_path):
             print("Training Raw Skipgrams")
             start = time.perf_counter()
-            skipgram_vectorizer = TokenCooccurrenceVectorizer(token_dictionary=token_dictionary)
+            skipgram_vectorizer = TokenCooccurrenceVectorizer(
+                token_dictionary=token_dictionary,
+                normalize_windows=False,
+                n_threads=8,
+                coo_initial_memory="2 GiB"
+            )
             skipgrams = skipgram_vectorizer.fit_transform(token_sequences)
             end = time.perf_counter()
             print(f"Finished in {format_timing(end - start)}\n")
@@ -184,7 +193,7 @@ if __name__ == "__main__":
             token_vectors_skipgram_raw = dist_dr(skipgrams)
             end = time.perf_counter()
             print(f"Finished in {format_timing(end - start)}\n")
-            with bz2.open(token_vectors_skipgram_raw_path, "wb") as f:
+            with open(token_vectors_skipgram_raw_path, "wb") as f:
                 pickle.dump(token_vectors_skipgram_raw, f)
 
             print("IWT Skipgrams")
@@ -198,14 +207,14 @@ if __name__ == "__main__":
             token_vectors_skipgram_iwt = dist_dr(iwt_skipgrams)
             end = time.perf_counter()
             print(f"Finished in {format_timing(end - start)}\n")
-            with bz2.open(token_vectors_skipgram_iwt_path, "wb") as f:
+            with open(token_vectors_skipgram_iwt_path, "wb") as f:
                 pickle.dump(token_vectors_skipgram_iwt, f)
 
             print("Skipgrams")
             start = time.perf_counter()
             model = gensim.models.word2vec.Word2Vec(
                 token_sequences,
-                vector_size=128,
+                vector_size=DIMENSION,
                 min_count=1, 
                 workers=skipgram_workers,
                 sg=1,
@@ -213,11 +222,11 @@ if __name__ == "__main__":
             )
             end = time.perf_counter()
             wv = model.wv
-            skipgram = np.empty((len(token_dictionary), 128))
+            skipgram = np.empty((len(token_dictionary), DIMENSION))
             for t,i in token_dictionary.items():
                 skipgram[i] = wv[t]
             print(f"Finished in {format_timing(end - start)}\n")
-            with bz2.open(token_vectors_skipgram_path, "wb") as f:
+            with open(token_vectors_skipgram_path, "wb") as f:
                 pickle.dump(skipgram)
 
         token_vectorization(token_sequences, token_dictionary, token_vectors_skipgram_raw_path, token_vectors_skipgram_iwt_path, token_vectors_skipgram_path)
@@ -228,13 +237,13 @@ if __name__ == "__main__":
 
     # Start document vectorization
     # Do each vectorizer one at a time and gc after each.
-    wasserstein_raw_raw_path = Path("wasserstein_raw_raw.pkl.bz2")
+    wasserstein_raw_raw_path = Path("wasserstein_raw_raw.pkl")
     if wasserstein_raw_raw_path.is_file():
         print("Wasserstein Raw Raw already exists, skip.")
     else:
-        with bz2.open(token_counts_path, "rb") as f:
+        with open(token_counts_path, "rb") as f:
             token_counts = pickle.load(f)
-        with bz2.open(token_vectors_skipgram_raw_path, "rb") as f:
+        with open(token_vectors_skipgram_raw_path, "rb") as f:
             token_vectors_skipgram_raw = pickle.load(f)
         print("Fit Wasserstein Raw Raw")
         fit_wasserstein(token_counts, token_vectors_skipgram_raw, wasserstein_raw_raw_path)
@@ -243,13 +252,13 @@ if __name__ == "__main__":
     gc.collect()
 
 
-    wasserstein_iwt_raw_path = Path("wasserstein_iwt_raw.pkl.bz2")
+    wasserstein_iwt_raw_path = Path("wasserstein_iwt_raw.pkl")
     if wasserstein_iwt_raw_path.is_file():
         print("Wasserstein Raw Raw already exists, skip.")
     else:
-        with bz2.open(token_counts_path, "rb") as f:
+        with open(token_counts_path, "rb") as f:
             token_counts = pickle.load(f)
-        with bz2.open(token_vectors_skipgram_iwt_path, "rb") as f:
+        with open(token_vectors_skipgram_iwt_path, "rb") as f:
             token_vectors_skipgram_iwt = pickle.load(f)
         print("Fit Wasserstein IWT Raw")
         fit_wasserstein(token_counts, token_vectors_skipgram_iwt, wasserstein_iwt_raw_path)
@@ -258,17 +267,17 @@ if __name__ == "__main__":
     gc.collect()
 
 
-    wasserstein_raw_iwt_path = Path("wasserstein_raw_iwt.pkl.bz2")
+    wasserstein_raw_iwt_path = Path("wasserstein_raw_iwt.pkl")
     if wasserstein_raw_iwt_path.is_file():
         print("Wasserstein Raw IWT already exists, skip.")
     else:
-        with bz2.open(token_counts_path, "rb") as f:
+        with open(token_counts_path, "rb") as f:
             token_counts = pickle.load(f)
-        with bz2.open(infoweight_transformer_path, "rb") as f:
+        with open(infoweight_transformer_path, "rb") as f:
             iwt = pickle.load(f)
         iwt_token_counts = iwt.transform(token_counts)
         del iwt
-        with bz2.open(token_vectors_skipgram_raw_path, "rb") as f:
+        with open(token_vectors_skipgram_raw_path, "rb") as f:
             token_vectors_skipgram_raw = pickle.load(f)
         print("Fit Wasserstein Raw IWT")
         fit_wasserstein(iwt_token_counts, token_vectors_skipgram_raw, wasserstein_raw_iwt_path)
@@ -277,17 +286,17 @@ if __name__ == "__main__":
     gc.collect()
 
 
-    wasserstein_iwt_iwt_path = Path("wasserstein_iwt_iwt.pkl.bz2")
+    wasserstein_iwt_iwt_path = Path("wasserstein_iwt_iwt.pkl")
     if wasserstein_iwt_iwt_path.is_file():
         print("Wasserstein IWT IWT already exists, skip.")
     else:
-        with bz2.open(token_counts_path, "rb") as f:
+        with open(token_counts_path, "rb") as f:
             token_counts = pickle.load(f)
-        with bz2.open(infoweight_transformer_path, "rb") as f:
+        with open(infoweight_transformer_path, "rb") as f:
             iwt = pickle.load(f)
         iwt_token_counts = iwt.transform(token_counts)
         del iwt
-        with bz2.open(token_vectors_skipgram_iwt_path, "rb") as f:
+        with open(token_vectors_skipgram_iwt_path, "rb") as f:
             token_vectors_skipgram_iwt = pickle.load(f)
         print("Fit Wasserstein IWT IWT")
         fit_wasserstein(iwt_token_counts, token_vectors_skipgram_iwt, wasserstein_iwt_iwt_path)
@@ -296,13 +305,13 @@ if __name__ == "__main__":
     gc.collect()
 
 
-    wasserstein_w2v_raw_path = Path("wasserstein_w2v_raw.pkl.bz2")
+    wasserstein_w2v_raw_path = Path("wasserstein_w2v_raw.pkl")
     if wasserstein_w2v_raw_path.is_file():
         print("Wasserstein W2V RAW already exists, skip.")
     else:
-        with bz2.open(token_counts_path, "rb") as f:
+        with open(token_counts_path, "rb") as f:
             token_counts = pickle.load(f)
-        with bz2.open(token_vectors_skipgram_path, "rb") as f:
+        with open(token_vectors_skipgram_path, "rb") as f:
             token_vectors_skipgram = pickle.load(f)
         print("Fit Wasserstein W2V RAW")
         fit_wasserstein(token_counts, token_vectors_skipgram, wasserstein_w2v_raw_path)
@@ -311,17 +320,17 @@ if __name__ == "__main__":
     gc.collect()
 
 
-    wasserstein_w2v_iwt_path = Path("wasserstein_w2v_iwt.pkl.bz2")
+    wasserstein_w2v_iwt_path = Path("wasserstein_w2v_iwt.pkl")
     if wasserstein_w2v_iwt_path.is_file():
         print("Wasserstein W2V IWT already exists, skip.")
     else:
-        with bz2.open(token_counts_path, "rb") as f:
+        with open(token_counts_path, "rb") as f:
             token_counts = pickle.load(f)
-        with bz2.open(infoweight_transformer_path, "rb") as f:
+        with open(infoweight_transformer_path, "rb") as f:
             iwt = pickle.load(f)
         iwt_token_counts = iwt.transform(token_counts)
         del iwt
-        with bz2.open(token_vectors_skipgram_path, "rb") as f:
+        with open(token_vectors_skipgram_path, "rb") as f:
             token_vectors_skipgram = pickle.load(f)
         print("Fit Wasserstein W2V IWT")
         fit_wasserstein(iwt_token_counts, token_vectors_skipgram, wasserstein_w2v_iwt_path)
