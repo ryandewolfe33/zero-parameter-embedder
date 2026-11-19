@@ -13,6 +13,7 @@ from embedder import ZeroParameterEmbedder
 logging.basicConfig(level=logging.INFO)
 custom_cache = mteb.cache.ResultCache(cache_path="mteb_results")
 
+exclude_tasks = ["MindSmallReranking"]
 
 if __name__ == "__main__":
     # Load HF token from .env file
@@ -21,7 +22,7 @@ if __name__ == "__main__":
 
     # Pick Benchmark tasks
     benchmark = mteb.get_benchmark("MTEB(eng, v2)")
-    tasks = benchmark.tasks
+    tasks = [t for t in benchmark.tasks if t.metadata.name not in exclude_tasks]
     print(f"Found {len(tasks)} tasks")
 
     tokenizer_path = "tokenizer.pkl.bz2"
@@ -47,6 +48,20 @@ if __name__ == "__main__":
     ]
 
     for details in model_details:
+        # Check existing results in the local cache
+        cached_results = custom_cache.load_results(models=[details[0]], tasks=tasks)
+        cached_task_names = {
+            task_res.task_name
+            for model_res in cached_results.model_results
+            for task_res in model_res.task_results
+        }
+        missing_tasks = [t for t in tasks if t.metadata.name not in cached_task_names]
+        if len(missing_tasks) == 0:
+            print("All tasks cached for", detials[0])
+            continue
+        
+        print(len(missing_tasks), "tasks left to run for", details[0])
+
         with bz2.open(details[1], "rb") as f:
             tokenizer = pickle.load(f)
         with bz2.open(details[2], "rb") as f:
@@ -60,10 +75,10 @@ if __name__ == "__main__":
             infoweight = None
         with bz2.open(details[5], "rb") as f:
             wasserstein = pickle.load(f)
-    
+
+        model = ZeroParameterEmbedder("ZPE", "0.0.1", tokenizer, token_dictionary, token_vectors, infoweight, wasserstein),
         # Create model
-        model = ZeroParameterEmbedder("ZPE", "0.0.1", tokenizer, token_dictionary, token_vectors, infoweight, wasserstein)
-        model.mteb_model_meta = ModelMeta(
+        model.metadata = ModelMeta(
             name=details[0],
             revision="0.0.1",
             languages=["eng-Latn"],
@@ -88,4 +103,5 @@ if __name__ == "__main__":
             model, 
             tasks=tasks,
             cache=custom_cache,
+            encode_kwargs = {'batch_size': 8192},
         )
