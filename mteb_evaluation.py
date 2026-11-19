@@ -9,11 +9,22 @@ import logging
 from embedder import ZeroParameterEmbedder
 
 
-# Define folder to save benchmark results in
+# Suppress task updated warnings
+class SuppressTaskUpdateFilter(logging.Filter):
+    def filter(self, record):
+        msg = record.getMessage()
+        return "updated" not in msg and "superseded" not in msg
+
+logging.getLogger("mteb").addFilter(SuppressTaskUpdateFilter())
 #logging.basicConfig(level=logging.INFO)
+
+# Define folder to save benchmark results in
 custom_cache = mteb.cache.ResultCache(cache_path="mteb_results")
 
-
+# This task is waay bigger than all the others
+# requires embeddings millions of documents
+# (compared to ~200k for next largest)
+# causing OOM and timeout errors
 exclude_tasks = ["MindSmallReranking"]
 
 if __name__ == "__main__":
