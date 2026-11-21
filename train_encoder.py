@@ -181,10 +181,12 @@ if __name__ == "__main__":
             skipgram_vectorizer = TokenCooccurrenceVectorizer(
                 token_dictionary=token_dictionary,
                 normalize_windows=False,
-                n_threads=8,
+                n_threads=skipgram_workers,
+                window_orientations="before",
                 coo_initial_memory="2 GiB"
             )
             skipgrams = skipgram_vectorizer.fit_transform(token_sequences)
+            skipgrams = skipgrams + skipgrams.transpose()
             end = time.perf_counter()
             print(f"Finished in {format_timing(end - start)}\n")
 
