@@ -24,8 +24,9 @@ import gc
 import io
 import pickle
 import time
+import sys
 
-DIMENSION = 64
+DIMENSION = 128
 
 
 def format_timing(elapsed):
@@ -114,7 +115,6 @@ if __name__ == "__main__":
             sentencepiece.SentencePieceTrainer.Train(
                 sentence_iterator=(x for x in pruned_text_list),
                 model_writer=model_buffer,
-                model_type="bpe",
                 vocab_size=16000,
             )
             tokenizer = sentencepiece.SentencePieceProcessor(model_proto=model_buffer.getvalue())
@@ -211,6 +211,8 @@ if __name__ == "__main__":
                 pickle.dump(token_vectors_skipgram_iwt, f)
 
             print("Skipgrams")
+            _save_hook = sys.unraisablehook
+            sys.unraisablehook = None # gensim prints lots of exception ignored messages
             start = time.perf_counter()
             model = gensim.models.word2vec.Word2Vec(
                 token_sequences,
@@ -221,13 +223,14 @@ if __name__ == "__main__":
                 shrink_windows=False
             )
             end = time.perf_counter()
+            sys.unraisablehook = _save_hook # Revert
             wv = model.wv
             skipgram = np.empty((len(token_dictionary), DIMENSION))
             for t,i in token_dictionary.items():
                 skipgram[i] = wv[t]
             print(f"Finished in {format_timing(end - start)}\n")
             with open(token_vectors_skipgram_path, "wb") as f:
-                pickle.dump(skipgram)
+                pickle.dump(skipgram, f)
 
         token_vectorization(token_sequences, token_dictionary, token_vectors_skipgram_raw_path, token_vectors_skipgram_iwt_path, token_vectors_skipgram_path)
 
