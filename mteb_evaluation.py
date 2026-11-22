@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 from mteb.models.model_meta import ModelMeta
 import mteb
-import bz2
 import os
 import pickle
 import logging
@@ -41,18 +40,18 @@ if __name__ == "__main__":
         print(t.metadata.name, t.metadata.descriptive_stats["test"]["num_samples"])
     print()
 
-    tokenizer_path = "tokenizer.pkl.bz2"
-    token_dictionary_path = "token_dictionary.pkl.bz2"
-    token_vectors_skipgram_raw_path = "token_vectors_skipgram_raw.pkl.bz2"
-    token_vectors_skipgram_iwt_path = "token_vectors_skipgram_iwt.pkl.bz2"
-    token_vectors_skipgram_path = "token_vectors_skipgram.pkl.bz2"
-    infoweight_transformer_path = "infoweight_transformer.pkl.bz2"
-    wasserstein_raw_raw_path = "wasserstein_raw_raw.pkl.bz2"
-    wasserstein_raw_iwt_path = "wasserstein_iwt_raw.pkl.bz2"
-    wasserstein_iwt_raw_path = "wasserstein_raw_iwt.pkl.bz2"
-    wasserstein_iwt_iwt_path = "wasserstein_iwt_iwt.pkl.bz2"
-    wasserstein_w2v_raw_path = "wasserstein_w2v_raw.pkl.bz2"
-    wasserstein_w2v_iwt_path = "wasserstein_w2v_iwt.pkl.bz2"
+    tokenizer_path = "tokenizer.pkl"
+    token_dictionary_path = "token_dictionary.pkl"
+    token_vectors_skipgram_raw_path = "token_vectors_skipgram_raw.pkl"
+    token_vectors_skipgram_iwt_path = "token_vectors_skipgram_iwt.pkl"
+    token_vectors_skipgram_path = "token_vectors_skipgram.pkl"
+    infoweight_transformer_path = "infoweight_transformer.pkl"
+    wasserstein_raw_raw_path = "wasserstein_raw_raw.pkl"
+    wasserstein_raw_iwt_path = "wasserstein_iwt_raw.pkl"
+    wasserstein_iwt_raw_path = "wasserstein_raw_iwt.pkl"
+    wasserstein_iwt_iwt_path = "wasserstein_iwt_iwt.pkl"
+    wasserstein_w2v_raw_path = "wasserstein_w2v_raw.pkl"
+    wasserstein_w2v_iwt_path = "wasserstein_w2v_iwt.pkl"
 
     model_details = [
         ("uw/zpe_raw_raw", tokenizer_path, token_dictionary_path, token_vectors_skipgram_raw_path, None, wasserstein_raw_raw_path),
@@ -80,22 +79,22 @@ if __name__ == "__main__":
 
         print(len(missing_tasks), "tasks left to run for", details[0])
 
-        with bz2.open(details[1], "rb") as f:
+        with open(details[1], "rb") as f:
             tokenizer = pickle.load(f)
-        with bz2.open(details[2], "rb") as f:
+        with open(details[2], "rb") as f:
             token_dictionary = pickle.load(f)
         if details[3] is not None:
-            with bz2.open(details[3], "rb") as f:
+            with open(details[3], "rb") as f:
                 token_vectors = pickle.load(f)
         else:
             token_vectors = None
         if details[4] is not None:
-            with bz2.open(details[4], "rb") as f:
+            with open(details[4], "rb") as f:
                 infoweight = pickle.load(f)
         else:
             infoweight = None
         if details[5] is not None:
-            with bz2.open(details[5], "rb") as f:
+            with open(details[5], "rb") as f:
                 wasserstein = pickle.load(f)
         else:
             wasserstein = None
