@@ -143,18 +143,25 @@ if __name__ == "__main__":
                 pickle.dump(token_counts, f)
             print(f"Token counts: {token_counts.shape} with {token_counts.nnz} entries")
 
+            u, s, v = svds(token_counts, k=DIMENSION, random_state=42)
+            with open("lsa_raw.pkl", "wb") as f:
+                pickle.dump(v, f)
+
             print("Fit IWT to token counts")
             start = time.perf_counter()
             infoweight_transformer = InformationWeightTransformer()
-            infoweight_transformer.fit(token_counts)
+            iwt_tokens = infoweight_transformer.fit_transform(token_counts)
             end = time.perf_counter()
             print(f"Finished in {format_timing(end - start)}\n")
             with open(infoweight_transformer_path, "wb") as f:
                 pickle.dump(infoweight_transformer , f)
 
+            u, s, v = svds(iwt_tokens, k=DIMENSION, random_state=42)
+            with open("lsa_raw.pkl", "wb") as f:
+                pickle.dump(v, f)
+
         # Saves files but does not return anything
         tokenizer_steps(data_path, tokenizer_path, token_sequences_path, token_dict_path, token_counts_path, infoweight_transformer_path)
-
 
 
     gc.collect()

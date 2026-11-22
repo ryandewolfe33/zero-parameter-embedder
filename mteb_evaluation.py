@@ -52,16 +52,18 @@ if __name__ == "__main__":
     wasserstein_iwt_iwt_path = "wasserstein_iwt_iwt.pkl"
     wasserstein_w2v_raw_path = "wasserstein_w2v_raw.pkl"
     wasserstein_w2v_iwt_path = "wasserstein_w2v_iwt.pkl"
+    lda_raw_path = "lda_raw.pkl"
+    lda_iwt_path = "lda_iwt.pkl"
 
     model_details = [
-        ("uw/zpe_raw_raw", tokenizer_path, token_dictionary_path, token_vectors_skipgram_raw_path, None, wasserstein_raw_raw_path),
-        ("uw/zpe_iwt_raw", tokenizer_path, token_dictionary_path, token_vectors_skipgram_iwt_path, None, wasserstein_iwt_raw_path),
-        ("uw/zpe_w2v_raw", tokenizer_path, token_dictionary_path, token_vectors_skipgram_path, None, wasserstein_w2v_raw_path),
-        ("uw/zpe_raw_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_raw_path, infoweight_transformer_path, wasserstein_raw_iwt_path),
-        ("uw/zpe_iwt_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_iwt_path, infoweight_transformer_path, wasserstein_iwt_iwt_path),
-        ("uw/zpe_w2v_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_path, infoweight_transformer_path, wasserstein_w2v_iwt_path),
-        ("uw/zpe_lsa_raw", tokenizer_path, token_dictionary_path, None, None, None),
-        ("uw/zpe_lsa_iwt", tokenizer_path, token_dictionary_path, None, infoweight_transformer_path, None),
+        ("uw/zpe_raw_raw", tokenizer_path, token_dictionary_path, token_vectors_skipgram_raw_path, None, wasserstein_raw_raw_path, None),
+        ("uw/zpe_iwt_raw", tokenizer_path, token_dictionary_path, token_vectors_skipgram_iwt_path, None, wasserstein_iwt_raw_path, None),
+        ("uw/zpe_w2v_raw", tokenizer_path, token_dictionary_path, token_vectors_skipgram_path, None, wasserstein_w2v_raw_path, None),
+        ("uw/zpe_raw_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_raw_path, infoweight_transformer_path, wasserstein_raw_iwt_path, None),
+        ("uw/zpe_iwt_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_iwt_path, infoweight_transformer_path, wasserstein_iwt_iwt_path, None),
+        ("uw/zpe_w2v_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_path, infoweight_transformer_path, wasserstein_w2v_iwt_path, None),
+        ("uw/zpe_lsa_raw", tokenizer_path, token_dictionary_path, None, None, None, lda_raw_path),
+        ("uw/zpe_lsa_iwt", tokenizer_path, token_dictionary_path, None, infoweight_transformer_path, None, lda_iwt_path),
     ]
 
     for details in model_details:
@@ -99,8 +101,14 @@ if __name__ == "__main__":
         else:
             wasserstein = None
 
+        if details[6] is not None:
+            with open(details[6], "rb") as f:
+                lda_components = pickle.load(f)
+        else:
+            lda_components = None
+
 	# Create model
-        model = ZeroParameterEmbedder("ZPE", "0.0.1", tokenizer, token_dictionary, token_vectors, infoweight, wasserstein)
+        model = ZeroParameterEmbedder("ZPE", "0.0.1", tokenizer, token_dictionary, token_vectors, infoweight, wasserstein, lda_components)
         model.mteb_model_meta = ModelMeta(
             name=details[0],
             revision="0.0.1",

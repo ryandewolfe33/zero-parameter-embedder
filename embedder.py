@@ -17,6 +17,7 @@ class ZeroParameterEmbedder(AbsEncoder):
             token_vectors,
             infoweight_transformer,
             wasserstein_vectorizer,
+            lda_components,
             device=None,
             internal_models_file: str | None = None,
             **kwargs
@@ -30,8 +31,7 @@ class ZeroParameterEmbedder(AbsEncoder):
         self.ngram_vectorizer = NgramVectorizer(token_dictionary=self.token_dictionary)
         self.infoweight_transformer = infoweight_transformer
         self.wasserstein_vectorizer = wasserstein_vectorizer
-
-        self.x = 1
+        self.lda_components = lda_components
 
     def encode(
         self,
@@ -64,11 +64,12 @@ class ZeroParameterEmbedder(AbsEncoder):
             token_counts = self.ngram_vectorizer.fit_transform(token_sequences)
             if self.infoweight_transformer is not None:
                 token_counts = self.infoweight_transformer.transform(token_counts)
-            if self.token_vectors is not None:
+            if self.wasserstein_vectorizer is not None:
                 vectors = self.wasserstein_vectorizer.transform(token_counts, vectors=self.token_vectors)
+            elif self.lda_components is not None:
+                vectors = token_counts @ self.lda_components.transpose()
             else:
-                u, s, v = svds(token_counts, k=128, random_state=42)
-                vectors = u @ s
+                raise ValueError("At least one of wasserstien or lda_components must be set.")
             embedding.append(vectors.astype("float32"))
 
         embedding = np.vstack(embedding)
