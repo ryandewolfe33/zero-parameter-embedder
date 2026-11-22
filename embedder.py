@@ -1,11 +1,10 @@
-import mteb
 import numpy as np
 from mteb.abstasks.task_metadata import TaskMetadata
 from mteb.types import PromptType, Array, BatchedInput
 from torch.utils.data import DataLoader
 from vectorizers import NgramVectorizer
+from scipy.sparse.linalg import svds
 
-from mteb.models.model_meta import ModelMeta
 from mteb.models.abs_encoder import AbsEncoder
 
 class ZeroParameterEmbedder(AbsEncoder):
@@ -64,8 +63,12 @@ class ZeroParameterEmbedder(AbsEncoder):
             token_sequences = self.tokenizer.encode(text, out_type=str)
             token_counts = self.ngram_vectorizer.fit_transform(token_sequences)
             if self.infoweight_transformer is not None:
-                token_counts = self.infoweight_transformer.transform(token_counts)   
-            vectors = self.wasserstein_vectorizer.transform(token_counts, vectors=self.token_vectors)
+                token_counts = self.infoweight_transformer.transform(token_counts)
+            if self.token_vectors is not None:
+                vectors = self.wasserstein_vectorizer.transform(token_counts, vectors=self.token_vectors)
+            else:
+                u, s, v = svds(token_counts, k=128, random_state=42)
+                vectors = u @ s
             embedding.append(vectors.astype("float32"))
 
         embedding = np.vstack(embedding)

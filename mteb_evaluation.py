@@ -61,6 +61,8 @@ if __name__ == "__main__":
         ("uw/zpe_raw_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_raw_path, infoweight_transformer_path, wasserstein_raw_iwt_path),
         ("uw/zpe_iwt_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_iwt_path, infoweight_transformer_path, wasserstein_iwt_iwt_path),
         ("uw/zpe_w2v_iwt", tokenizer_path, token_dictionary_path, token_vectors_skipgram_path, infoweight_transformer_path, wasserstein_w2v_iwt_path),
+        ("uw/zpe_lsa_raw", tokenizer_path, token_dictionary_path, None, None, None),
+        ("uw/zpe_lsa_iwt", tokenizer_path, token_dictionary_path, None, infoweight_transformer_path, None),
     ]
 
     for details in model_details:
@@ -82,15 +84,21 @@ if __name__ == "__main__":
             tokenizer = pickle.load(f)
         with bz2.open(details[2], "rb") as f:
             token_dictionary = pickle.load(f)
-        with bz2.open(details[3], "rb") as f:
-            token_vectors = pickle.load(f)
+        if details[3] is not None:
+            with bz2.open(details[3], "rb") as f:
+                token_vectors = pickle.load(f)
+        else:
+            token_vectors = None
         if details[4] is not None:
             with bz2.open(details[4], "rb") as f:
                 infoweight = pickle.load(f)
         else:
             infoweight = None
-        with bz2.open(details[5], "rb") as f:
-            wasserstein = pickle.load(f)
+        if details[5] is not None:
+            with bz2.open(details[5], "rb") as f:
+                wasserstein = pickle.load(f)
+        else:
+            wasserstein = None
 
 	# Create model
         model = ZeroParameterEmbedder("ZPE", "0.0.1", tokenizer, token_dictionary, token_vectors, infoweight, wasserstein)
